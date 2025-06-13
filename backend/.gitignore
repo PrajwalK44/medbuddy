@@ -1,4 +1,4 @@
 .env
 __pycache__
 myenv
-app/utils/pushnotificationsinvictus-firebase-adminsdk-fbsvc-0970a4e463.json
+backend\app\utils\pushnotificationsinvictus-firebase-adminsdk-fbsvc-0970a4e463.json
