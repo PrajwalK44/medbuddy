@@ -5,25 +5,36 @@ import {
   Route,
   useNavigate,
 } from "react-router-dom";
-import { ChevronRight, Moon, Sun } from "lucide-react";
+import { ChevronRight, Moon, Sun, MessageCircle } from "lucide-react";
 import Dashboard from "./pages/Dashboard";
 import MedicationList from "./pages/MedicationList";
 import Reports from "./pages/Reports";
 import Chatbot from "./components/Chatbot";
 import Sidebar from "./components/Sidebar";
-import AddMedication from "./components/AddMedication";
+import AddMedication from "./pages/AddMedication";
 import Profile from "./components/Profile";
 import NotificationDropdown from "./components/NotificationDropdown";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import PatientProfile from "./pages/PatientProfile";
+import CaregiverProfile from "./pages/CaregiverProfile";
+import CalendarPage from "./pages/CalendarPage";
+import NearbyPharmaciesPage from "./pages/NearbyPharmaciesPage";
+
+interface Notification {
+  id: number;
+  message: string;
+  time: string;
+  read: boolean;
+}
+
 // Custom styles to hide scrollbars
-const scrollbarHideStyles = {
-  // For Firefox
-  scrollbarWidth: "none",
-  // For IE/Edge
+const scrollbarHideStyles: React.CSSProperties = {
+  scrollbarWidth: "none" as const,
   msOverflowStyle: "none",
-  // For Chrome/Safari/Opera - needs to be combined with the ::-webkit-scrollbar style
 };
 
-function AppContent() {
+function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [chatbotOpen, setChatbotOpen] = useState(false);
   const [darkMode, setDarkMode] = useState<boolean>(() => {
@@ -52,35 +63,14 @@ function AppContent() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log("=== DARK MODE EFFECT TRIGGERED ===");
-    console.log("Current darkMode state:", darkMode);
-    console.log("HTML element before changes:", {
-      hasClass: document.documentElement.classList.contains("dark"),
-      allClasses: document.documentElement.className,
-    });
-
-    // Force remove all dark classes first
-    document.documentElement.classList.remove("dark");
-    document.body.classList.remove("dark");
-
-    // Then add dark class only if needed
     if (darkMode) {
-      console.log("Adding dark classes");
       document.documentElement.classList.add("dark");
-      document.body.classList.add("dark");
     } else {
-      console.log("Keeping light mode (no dark classes)");
+      document.documentElement.classList.remove("dark");
     }
-
-    console.log("HTML element after changes:", {
-      hasClass: document.documentElement.classList.contains("dark"),
-      allClasses: document.documentElement.className,
-    });
-
-    // Save to localStorage
+    // Save to localStorage whenever darkMode changes
     localStorage.setItem("darkMode", JSON.stringify(darkMode));
-    console.log("Saved to localStorage:", darkMode);
-  }, [darkMode]); // This will run whenever darkMode changes
+  }, [darkMode]);
 
   const [notifications, setNotifications] = useState<Notification[]>([
     {
@@ -104,12 +94,6 @@ function AppContent() {
   ]);
 
   const handleMarkAllAsRead = () => {
-    // setNotifications(prevNotifications =>
-    //   prevNotifications.map(notification => ({
-    //     ...notification,
-    //     read: true
-    //   }))
-    // );
     setNotifications([]);
   };
 
@@ -120,59 +104,31 @@ function AppContent() {
     navigate("/");
   };
 
-  const toggleDarkMode = (): void => {
-    console.log("=== TOGGLE CLICKED ===");
-    console.log("Current state before toggle:", darkMode);
-
-    setDarkMode((prevMode: boolean) => {
-      const newMode = !prevMode;
-      console.log("New mode will be:", newMode);
-      return newMode;
-    });
-  };
-
-  // Add a temporary reset button for testing
-  const resetToLight = (): void => {
-    console.log("=== FORCE RESET TO LIGHT ===");
-    localStorage.removeItem("darkMode");
-    setDarkMode(false);
+  const toggleDarkMode = () => {
+    setDarkMode((prevMode) => !prevMode);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col overflow-hidden">
-      <div className="fixed top-0 left-0 bg-red-500 text-white p-2 text-xs z-50">
-        <div>Dark Mode State: {darkMode ? "DARK" : "LIGHT"}</div>
-        <div>
-          HTML has dark class:{" "}
-          {document.documentElement.classList.contains("dark") ? "YES" : "NO"}
-        </div>
-        <button
-          onClick={resetToLight}
-          className="bg-white text-black px-2 py-1 rounded text-xs mt-1"
-        >
-          Force Light Mode
-        </button>
-      </div>
-
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm z-10">
+      <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-sm z-10 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center ">
+            <div className="flex items-center">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
+                className="p-2 rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none transition-all duration-200"
               >
                 <ChevronRight
                   size={24}
-                  className={`transition-transform ${
+                  className={`transition-transform duration-300 ${
                     sidebarOpen ? "rotate-180" : ""
                   }`}
                 />
               </button>
 
               <h1
-                className="ml-2 text-xl font-bold text-blue-600 dark:text-blue-400 absolute left-4 cursor-pointer"
+                className="ml-2 text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-400 dark:from-blue-400 dark:to-blue-300 bg-clip-text text-transparent cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={handleHome}
               >
                 MedBuddy AI
@@ -181,14 +137,14 @@ function AppContent() {
             <div className="flex items-center space-x-4 absolute right-4">
               <button
                 onClick={toggleDarkMode}
-                className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 hover:scale-105"
                 aria-label={
                   darkMode ? "Switch to light mode" : "Switch to dark mode"
                 }
               >
                 {darkMode ? <Sun size={20} /> : <Moon size={20} />}
               </button>
-              <button className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600">
+              <button className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 hover:scale-105">
                 <NotificationDropdown
                   notifications={notifications}
                   onMarkAllAsRead={handleMarkAllAsRead}
@@ -196,10 +152,10 @@ function AppContent() {
               </button>
               <div
                 onClick={handleProfile}
-                className="relative group h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium cursor-pointer"
+                className="relative group h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-medium cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105"
               >
                 JD
-                <span className="absolute left-1/2 -translate-x-1/2 top-10 scale-0 group-hover:scale-100 transition-transform bg-gray-800 dark:bg-gray-700 text-white text-xs py-1 px-2 rounded">
+                <span className="absolute left-1/2 -translate-x-1/2 top-12 scale-0 group-hover:scale-100 transition-all duration-200 bg-gray-800 dark:bg-gray-700 text-white text-xs py-1 px-2 rounded shadow-lg">
                   Hello, John Doe
                 </span>
               </div>
@@ -214,16 +170,10 @@ function AppContent() {
 
         {/* Main content */}
         <main
-          className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8"
+          className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 bg-gray-50/50 dark:bg-gray-900/50 backdrop-blur-sm"
           style={scrollbarHideStyles}
         >
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/medications" element={<MedicationList />} />
-            <Route path="/medications/add" element={<AddMedication />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/profile" element={<Profile />} />
-          </Routes>
+          {children}
         </main>
 
         {/* Chatbot */}
@@ -234,31 +184,21 @@ function AppContent() {
       {!chatbotOpen && (
         <button
           onClick={() => setChatbotOpen(true)}
-          className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-blue-600 dark:bg-blue-500 text-white shadow-lg flex items-center justify-center hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
+          className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-blue-500 dark:from-blue-500 dark:to-blue-400 text-white shadow-lg flex items-center justify-center hover:shadow-xl hover:scale-105 transition-all duration-200"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-          </svg>
+          <MessageCircle size={24} />
         </button>
       )}
-      <style jsx global>{`
-        ::-webkit-scrollbar {
-          display: none;
-        }
-        * {
-          scrollbar-width: none;
-        }
-      `}</style>
+      <style>
+        {`
+          ::-webkit-scrollbar {
+            display: none;
+          }
+          * {
+            scrollbar-width: none;
+          }
+        `}
+      </style>
     </div>
   );
 }
@@ -266,7 +206,36 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AppContent />
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+
+        {/* All authenticated routes with wildcard for nested routing */}
+        <Route
+          path="/*"
+          element={
+            <AuthenticatedLayout>
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/patient-profile/*" element={<PatientProfile />} />
+                <Route
+                  path="/caregiver-profile/*"
+                  element={<CaregiverProfile />}
+                />
+                <Route path="/medications/*" element={<MedicationList />} />
+                <Route path="/medications/add" element={<AddMedication />} />
+                <Route path="/reports" element={<Reports />} />
+                <Route path="/calendar" element={<CalendarPage />} />
+                <Route
+                  path="/nearby-pharmacies"
+                  element={<NearbyPharmaciesPage />}
+                />
+              </Routes>
+            </AuthenticatedLayout>
+          }
+        />
+      </Routes>
     </Router>
   );
 }
