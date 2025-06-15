@@ -11,10 +11,11 @@ import {
   Phone,
   Activity,
   Clock,
+  Mail,
 } from "lucide-react";
 
 const Profile: React.FC = () => {
-  const [user] = useState({
+  const [user, setUser] = useState({
     name: "John Doe",
     email: "john.doe@example.com",
     phone: "+1 (555) 123-4567",
@@ -65,6 +66,43 @@ const Profile: React.FC = () => {
   });
 
   const [activeSection, setActiveSection] = useState("");
+  const [isNewGoalDialogOpen, setIsNewGoalDialogOpen] = useState(false);
+  const [isNewAppointmentDialogOpen, setIsNewAppointmentDialogOpen] =
+    useState(false);
+  const [isUpdateMedicalOpen, setIsUpdateMedicalOpen] = useState(false);
+  const [isUpdateAccountOpen, setIsUpdateAccountOpen] = useState(false);
+  const [newGoal, setNewGoal] = useState({
+    title: "",
+  });
+  const [newAppointment, setNewAppointment] = useState({
+    title: "",
+    date: "",
+    time: "",
+  });
+  const [newAllergy, setNewAllergy] = useState("");
+  const [newCondition, setNewCondition] = useState("");
+  const [newPhysician, setNewPhysician] = useState({
+    name: "",
+    phone: "",
+    hospital: "",
+  });
+  const [updatedMedical, setUpdatedMedical] = useState({
+    bloodType: "",
+    allergies: [] as string[],
+    conditions: [] as string[],
+    physicians: [] as Array<{
+      name: string;
+      phone: string;
+      hospital: string;
+    }>,
+  });
+  const [updatedAccount, setUpdatedAccount] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    dateOfBirth: "",
+    gender: "",
+  });
 
   const toggleSection = (section: string) => {
     if (activeSection === section) {
@@ -72,6 +110,124 @@ const Profile: React.FC = () => {
     } else {
       setActiveSection(section);
     }
+  };
+
+  const handleAddGoal = () => {
+    if (newGoal.title.trim()) {
+      const goal = {
+        id: user.healthGoals.length + 1,
+        title: newGoal.title,
+        progress: 0,
+      };
+      setUser({
+        ...user,
+        healthGoals: [...user.healthGoals, goal],
+      });
+      setNewGoal({ title: "" });
+      setIsNewGoalDialogOpen(false);
+    }
+  };
+
+  const handleAddAppointment = () => {
+    if (
+      newAppointment.title.trim() &&
+      newAppointment.date &&
+      newAppointment.time
+    ) {
+      const appointment = {
+        id: user.appointments.length + 1,
+        title: newAppointment.title,
+        date: newAppointment.date,
+        time: newAppointment.time,
+      };
+      setUser({
+        ...user,
+        appointments: [...user.appointments, appointment],
+      });
+      setNewAppointment({ title: "", date: "", time: "" });
+      setIsNewAppointmentDialogOpen(false);
+    }
+  };
+
+  const handleAddAllergy = () => {
+    if (newAllergy.trim()) {
+      setUpdatedMedical({
+        ...updatedMedical,
+        allergies: [...updatedMedical.allergies, newAllergy.trim()],
+      });
+      setNewAllergy("");
+    }
+  };
+
+  const handleRemoveAllergy = (index: number) => {
+    setUpdatedMedical({
+      ...updatedMedical,
+      allergies: updatedMedical.allergies.filter((_, i) => i !== index),
+    });
+  };
+
+  const handleAddCondition = () => {
+    if (newCondition.trim()) {
+      setUpdatedMedical({
+        ...updatedMedical,
+        conditions: [...updatedMedical.conditions, newCondition.trim()],
+      });
+      setNewCondition("");
+    }
+  };
+
+  const handleRemoveCondition = (index: number) => {
+    setUpdatedMedical({
+      ...updatedMedical,
+      conditions: updatedMedical.conditions.filter((_, i) => i !== index),
+    });
+  };
+
+  const handleAddPhysician = () => {
+    if (
+      newPhysician.name.trim() &&
+      newPhysician.phone.trim() &&
+      newPhysician.hospital.trim()
+    ) {
+      setUpdatedMedical({
+        ...updatedMedical,
+        physicians: [...updatedMedical.physicians, { ...newPhysician }],
+      });
+      setNewPhysician({ name: "", phone: "", hospital: "" });
+    }
+  };
+
+  const handleRemovePhysician = (index: number) => {
+    setUpdatedMedical({
+      ...updatedMedical,
+      physicians: updatedMedical.physicians.filter((_, i) => i !== index),
+    });
+  };
+
+  const handleUpdateMedical = () => {
+    setUser({
+      ...user,
+      medicalInfo: {
+        ...user.medicalInfo,
+        bloodType: updatedMedical.bloodType,
+        allergies: updatedMedical.allergies,
+        conditions: updatedMedical.conditions,
+        physicians: updatedMedical.physicians, // Store the full array
+      },
+    });
+    setIsUpdateMedicalOpen(false);
+  };
+
+  const handleUpdateAccount = () => {
+    setUser({
+      ...user,
+      name: updatedAccount.name,
+      email: updatedAccount.email,
+      phone: updatedAccount.phone,
+      dateOfBirth: updatedAccount.dateOfBirth,
+      gender: updatedAccount.gender,
+    });
+    setIsUpdateAccountOpen(false);
   };
 
   // Calculate age from date of birth
@@ -114,73 +270,172 @@ const Profile: React.FC = () => {
               <p className="text-gray-600 dark:text-gray-400 mt-1">
                 {user.email}
               </p>
-              <div className="flex items-center mt-2 text-sm text-gray-500 dark:text-gray-400">
-                <span className="mr-3">
-                  {calculateAge(user.dateOfBirth)} years
-                </span>
-                <span className="mx-3">•</span>
-                <span>{user.gender}</span>
-              </div>
             </div>
           </div>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-4 p-6">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-xl p-4 shadow-sm border border-blue-100 dark:border-blue-800/50">
-            <div className="flex items-center justify-between">
+        <div className="p-6">
+          {isUpdateAccountOpen ? (
+            <div className="space-y-6">
               <div>
-                <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                  Adherence
-                </p>
-                <p className="text-2xl font-bold text-blue-700 dark:text-blue-300 mt-1">
-                  85%
-                </p>
-              </div>
-              <div className="p-2 bg-blue-100 dark:bg-blue-800/50 rounded-lg">
-                <Activity
-                  className="text-blue-600 dark:text-blue-400"
-                  size={20}
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  value={updatedAccount.name}
+                  onChange={(e) =>
+                    setUpdatedAccount({
+                      ...updatedAccount,
+                      name: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
-            </div>
-          </div>
-          <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 rounded-xl p-4 shadow-sm border border-green-100 dark:border-green-800/50">
-            <div className="flex items-center justify-between">
+
               <div>
-                <p className="text-sm font-medium text-green-600 dark:text-green-400">
-                  Medications
-                </p>
-                <p className="text-2xl font-bold text-green-700 dark:text-green-300 mt-1">
-                  3
-                </p>
-              </div>
-              <div className="p-2 bg-green-100 dark:bg-green-800/50 rounded-lg">
-                <Heart
-                  className="text-green-600 dark:text-green-400"
-                  size={20}
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={updatedAccount.email}
+                  onChange={(e) =>
+                    setUpdatedAccount({
+                      ...updatedAccount,
+                      email: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
-            </div>
-          </div>
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 rounded-xl p-4 shadow-sm border border-purple-100 dark:border-purple-800/50">
-            <div className="flex items-center justify-between">
+
               <div>
-                <p className="text-sm font-medium text-purple-600 dark:text-purple-400">
-                  Next Refill
-                </p>
-                <p className="text-2xl font-bold text-purple-700 dark:text-purple-300 mt-1">
-                  5 days
-                </p>
-              </div>
-              <div className="p-2 bg-purple-100 dark:bg-purple-800/50 rounded-lg">
-                <Calendar
-                  className="text-purple-600 dark:text-purple-400"
-                  size={20}
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={updatedAccount.phone}
+                  onChange={(e) =>
+                    setUpdatedAccount({
+                      ...updatedAccount,
+                      phone: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Date of Birth
+                </label>
+                <input
+                  type="date"
+                  value={updatedAccount.dateOfBirth}
+                  onChange={(e) =>
+                    setUpdatedAccount({
+                      ...updatedAccount,
+                      dateOfBirth: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Gender
+                </label>
+                <select
+                  value={updatedAccount.gender}
+                  onChange={(e) =>
+                    setUpdatedAccount({
+                      ...updatedAccount,
+                      gender: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                  <option value="Prefer not to say">Prefer not to say</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setIsUpdateAccountOpen(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUpdateAccount}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200"
+                >
+                  Save Changes
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Age
+                  </h4>
+                  <p className="bg-white dark:bg-gray-800 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 font-medium">
+                    {calculateAge(user.dateOfBirth)} years
+                  </p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Gender
+                  </h4>
+                  <p className="bg-white dark:bg-gray-800 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 font-medium">
+                    {user.gender}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Contact Information
+                </h4>
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
+                  <div className="flex items-center text-gray-600 dark:text-gray-400">
+                    <Mail size={16} className="mr-2" />
+                    <span>{user.email}</span>
+                  </div>
+                  <div className="flex items-center text-gray-600 dark:text-gray-400">
+                    <Phone size={16} className="mr-2" />
+                    <span>{user.phone}</span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  setUpdatedAccount({
+                    name: user.name,
+                    email: user.email,
+                    phone: user.phone,
+                    dateOfBirth: user.dateOfBirth,
+                    gender: user.gender,
+                  });
+                  setIsUpdateAccountOpen(true);
+                }}
+                className="text-sm text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
+              >
+                Update Account Information
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -236,9 +491,46 @@ const Profile: React.FC = () => {
                   </div>
                 </div>
               ))}
-              <button className="mt-4 text-sm text-blue-600 dark:text-blue-400 font-medium flex items-center hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200">
-                <span className="mr-1">+</span> Add New Goal
-              </button>
+
+              {isNewGoalDialogOpen ? (
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 animate-slideDown">
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Goal Title
+                    </label>
+                    <input
+                      type="text"
+                      value={newGoal.title}
+                      onChange={(e) =>
+                        setNewGoal({ ...newGoal, title: e.target.value })
+                      }
+                      placeholder="e.g., Exercise 30 minutes daily"
+                      className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div className="flex justify-end space-x-3">
+                    <button
+                      onClick={() => setIsNewGoalDialogOpen(false)}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleAddGoal}
+                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200"
+                    >
+                      Add Goal
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setIsNewGoalDialogOpen(true)}
+                  className="mt-4 text-sm text-blue-600 dark:text-blue-400 font-medium flex items-center hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
+                >
+                  <span className="mr-1">+</span> Add New Goal
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -292,16 +584,93 @@ const Profile: React.FC = () => {
                     </div>
                   </div>
                 ))}
-                <button className="mt-4 text-sm text-blue-600 dark:text-blue-400 font-medium flex items-center hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200">
-                  <span className="mr-1">+</span> Add Appointment
-                </button>
+
+                {isNewAppointmentDialogOpen ? (
+                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 animate-slideDown">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Appointment Title
+                        </label>
+                        <input
+                          type="text"
+                          value={newAppointment.title}
+                          onChange={(e) =>
+                            setNewAppointment({
+                              ...newAppointment,
+                              title: e.target.value,
+                            })
+                          }
+                          placeholder="e.g., Annual Checkup"
+                          className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Date
+                        </label>
+                        <input
+                          type="date"
+                          value={newAppointment.date}
+                          onChange={(e) =>
+                            setNewAppointment({
+                              ...newAppointment,
+                              date: e.target.value,
+                            })
+                          }
+                          className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Time
+                        </label>
+                        <input
+                          type="time"
+                          value={newAppointment.time}
+                          onChange={(e) =>
+                            setNewAppointment({
+                              ...newAppointment,
+                              time: e.target.value,
+                            })
+                          }
+                          className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div className="flex justify-end space-x-3">
+                        <button
+                          onClick={() => setIsNewAppointmentDialogOpen(false)}
+                          className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleAddAppointment}
+                          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200"
+                        >
+                          Add Appointment
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setIsNewAppointmentDialogOpen(true)}
+                    className="mt-4 text-sm text-blue-600 dark:text-blue-400 font-medium flex items-center hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
+                  >
+                    <span className="mr-1">+</span> Add Appointment
+                  </button>
+                )}
               </div>
             ) : (
               <div className="text-center py-6">
                 <p className="text-gray-500 dark:text-gray-400">
                   No upcoming appointments
                 </p>
-                <button className="mt-3 text-sm text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200">
+                <button
+                  onClick={() => setIsNewAppointmentDialogOpen(true)}
+                  className="mt-3 text-sm text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
+                >
                   Schedule an appointment
                 </button>
               </div>
@@ -335,80 +704,294 @@ const Profile: React.FC = () => {
         {activeSection === "medical" && (
           <div className="p-6 bg-gray-50 dark:bg-gray-700/50 animate-slideDown">
             <div className="space-y-6">
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Blood Type
-                </h4>
-                <p className="bg-white dark:bg-gray-800 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 font-medium">
-                  {user.medicalInfo.bloodType}
-                </p>
-              </div>
-
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Allergies
-                </h4>
-                {user.medicalInfo.allergies.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {user.medicalInfo.allergies.map((allergy, index) => (
-                      <span
-                        key={index}
-                        className="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-3 py-1.5 rounded-full text-sm font-medium"
+              {isUpdateMedicalOpen ? (
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 animate-slideDown">
+                  <div className="space-y-6">
+                    {/* Blood Type */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Blood Type
+                      </label>
+                      <select
+                        value={updatedMedical.bloodType}
+                        onChange={(e) =>
+                          setUpdatedMedical({
+                            ...updatedMedical,
+                            bloodType: e.target.value,
+                          })
+                        }
+                        className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
-                        {allergy}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 dark:text-gray-400 text-sm">
-                    No known allergies
-                  </p>
-                )}
-              </div>
+                        <option value="">Select Blood Type</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                      </select>
+                    </div>
 
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Medical Conditions
-                </h4>
-                {user.medicalInfo.conditions.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {user.medicalInfo.conditions.map((condition, index) => (
-                      <span
-                        key={index}
-                        className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-full text-sm font-medium"
+                    {/* Allergies */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Allergies
+                      </label>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {updatedMedical.allergies.map((allergy, index) => (
+                          <span
+                            key={index}
+                            className="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-3 py-1.5 rounded-full text-sm font-medium flex items-center"
+                          >
+                            {allergy}
+                            <button
+                              onClick={() => handleRemoveAllergy(index)}
+                              className="ml-2 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newAllergy}
+                          onChange={(e) => setNewAllergy(e.target.value)}
+                          placeholder="Add new allergy"
+                          className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        <button
+                          onClick={handleAddAllergy}
+                          className="px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-800/30 transition-colors duration-200"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Medical Conditions */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Medical Conditions
+                      </label>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {updatedMedical.conditions.map((condition, index) => (
+                          <span
+                            key={index}
+                            className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-full text-sm font-medium flex items-center"
+                          >
+                            {condition}
+                            <button
+                              onClick={() => handleRemoveCondition(index)}
+                              className="ml-2 text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newCondition}
+                          onChange={(e) => setNewCondition(e.target.value)}
+                          placeholder="Add new condition"
+                          className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        <button
+                          onClick={handleAddCondition}
+                          className="px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/30 transition-colors duration-200"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Primary Physicians */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Primary Physicians
+                      </label>
+                      <div className="space-y-3 mb-4">
+                        {updatedMedical.physicians.map((physician, index) => (
+                          <div
+                            key={index}
+                            className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 flex justify-between items-start"
+                          >
+                            <div>
+                              <p className="font-medium text-gray-900 dark:text-gray-100">
+                                {physician.name}
+                              </p>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                {physician.phone}
+                              </p>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                {physician.hospital}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => handleRemovePhysician(index)}
+                              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="space-y-3">
+                        <input
+                          type="text"
+                          value={newPhysician.name}
+                          onChange={(e) =>
+                            setNewPhysician({
+                              ...newPhysician,
+                              name: e.target.value,
+                            })
+                          }
+                          placeholder="Doctor's Name"
+                          className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        <input
+                          type="tel"
+                          value={newPhysician.phone}
+                          onChange={(e) =>
+                            setNewPhysician({
+                              ...newPhysician,
+                              phone: e.target.value,
+                            })
+                          }
+                          placeholder="Phone Number"
+                          className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        <input
+                          type="text"
+                          value={newPhysician.hospital}
+                          onChange={(e) =>
+                            setNewPhysician({
+                              ...newPhysician,
+                              hospital: e.target.value,
+                            })
+                          }
+                          placeholder="Hospital/Clinic Name"
+                          className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        <button
+                          onClick={handleAddPhysician}
+                          className="w-full px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-800/30 transition-colors duration-200"
+                        >
+                          Add Physician
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end space-x-3">
+                      <button
+                        onClick={() => setIsUpdateMedicalOpen(false)}
+                        className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
                       >
-                        {condition}
-                      </span>
-                    ))}
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleUpdateMedical}
+                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200"
+                      >
+                        Save Changes
+                      </button>
+                    </div>
                   </div>
-                ) : (
-                  <p className="text-gray-500 dark:text-gray-400 text-sm">
-                    No known conditions
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Primary Physician
-                </h4>
-                <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
-                  <p className="font-medium text-gray-900 dark:text-gray-100">
-                    {user.medicalInfo.physician.name}
-                  </p>
-                  <div className="flex items-center mt-2 text-sm text-gray-500 dark:text-gray-400">
-                    <Phone size={14} className="mr-2" />
-                    <span>{user.medicalInfo.physician.phone}</span>
-                  </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    {user.medicalInfo.physician.hospital}
-                  </p>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Blood Type
+                    </h4>
+                    <p className="bg-white dark:bg-gray-800 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 font-medium">
+                      {user.medicalInfo.bloodType}
+                    </p>
+                  </div>
 
-              <button className="text-sm text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200">
-                Update Medical Information
-              </button>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Allergies
+                    </h4>
+                    {user.medicalInfo.allergies.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {user.medicalInfo.allergies.map((allergy, index) => (
+                          <span
+                            key={index}
+                            className="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-3 py-1.5 rounded-full text-sm font-medium"
+                          >
+                            {allergy}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">
+                        No known allergies
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Medical Conditions
+                    </h4>
+                    {user.medicalInfo.conditions.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {user.medicalInfo.conditions.map((condition, index) => (
+                          <span
+                            key={index}
+                            className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-full text-sm font-medium"
+                          >
+                            {condition}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">
+                        No known conditions
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Primary Physician
+                    </h4>
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                      <p className="font-medium text-gray-900 dark:text-gray-100">
+                        {user.medicalInfo.physician.name}
+                      </p>
+                      <div className="flex items-center mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        <Phone size={14} className="mr-2" />
+                        <span>{user.medicalInfo.physician.phone}</span>
+                      </div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {user.medicalInfo.physician.hospital}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setUpdatedMedical({
+                        bloodType: user.medicalInfo.bloodType,
+                        allergies: [...user.medicalInfo.allergies],
+                        conditions: [...user.medicalInfo.conditions],
+                        physicians: [user.medicalInfo.physician],
+                      });
+                      setIsUpdateMedicalOpen(true);
+                    }}
+                    className="text-sm text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
+                  >
+                    Update Medical Information
+                  </button>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -936,7 +1519,7 @@ const Profile: React.FC = () => {
           @keyframes slideDown {
             from {
               opacity: 0;
-              transform: translateY(-10px);
+              transform: translateY(-100%);
             }
             to {
               opacity: 1;
